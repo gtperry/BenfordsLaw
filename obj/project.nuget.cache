@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "tzxfGmD7FtDPdYCNID+zU8ywYGzR0lh69tmghW5o4wJTREMM4t2RH8poG+sLGvhYnO782io2n/5doQBDdE8juw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\griff\\WorkPAI\\Benford\\Benford.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\griff\\.nuget\\packages\\csvhelper\\28.0.0\\csvhelper.28.0.0.nupkg.sha512",
+    "C:\\Users\\griff\\.nuget\\packages\\ilgpu\\1.2.0\\ilgpu.1.2.0.nupkg.sha512",
+    "C:\\Users\\griff\\.nuget\\packages\\ilgpu.algorithms\\1.2.0\\ilgpu.algorithms.1.2.0.nupkg.sha512",
+    "C:\\Users\\griff\\.nuget\\packages\\system.collections.immutable\\6.0.0\\system.collections.immutable.6.0.0.nupkg.sha512",
+    "C:\\Users\\griff\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\griff\\.nuget\\packages\\system.reflection.metadata\\6.0.1\\system.reflection.metadata.6.0.1.nupkg.sha512",
+    "C:\\Users\\griff\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

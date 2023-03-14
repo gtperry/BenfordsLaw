@@ -1,0 +1,15 @@
+C:\Users\griff\WorkPAI\Benford\bin\Debug\net6.0\Benford.exe
+C:\Users\griff\WorkPAI\Benford\bin\Debug\net6.0\Benford.deps.json
+C:\Users\griff\WorkPAI\Benford\bin\Debug\net6.0\Benford.runtimeconfig.json
+C:\Users\griff\WorkPAI\Benford\bin\Debug\net6.0\Benford.dll
+C:\Users\griff\WorkPAI\Benford\bin\Debug\net6.0\Benford.pdb
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.csproj.AssemblyReference.cache
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.AssemblyInfoInputs.cache
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.AssemblyInfo.cs
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.csproj.CoreCompileInputs.cache
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.dll
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\refint\Benford.dll
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.pdb
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\Benford.genruntimeconfig.cache
+C:\Users\griff\WorkPAI\Benford\obj\Debug\net6.0\ref\Benford.dll
