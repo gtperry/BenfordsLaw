@@ -15,6 +15,7 @@ namespace Benford
     public class BenfordsLaw
     {
     	public double[] arr;
+        public double[,] multiarr;
     	public int[] distributions;
         MemoryBuffer1D<int, Stride1D.Dense> distBuffer;
         MemoryBuffer1D<double, Stride1D.Dense> arrBuffer;
@@ -40,10 +41,13 @@ namespace Benford
             
 
         }
+        public void setMultiArr(double[,] arr){
+            this.multiarr = arr;
+        }
         public int[] getDist(){
         	int num;
             int n;
-        	Console.WriteLine("Heree");
+        	//Console.WriteLine("Heree");
         	//this.arr = array;
         	for(int i = 0; i < this.arr.GetLength(0); i++){
         		num =  (int)this.arr[i];
@@ -164,6 +168,7 @@ namespace Benford
             this.distBuffer = accelerate.Allocate1D<int>(new Index1D(10));
             this.valsbuffer = accelerate.Allocate1D<double>(new Index1D(5));
 
+
            
 
 
@@ -197,6 +202,72 @@ namespace Benford
             this.distributions = this.distBuffer.GetAsArray1D();
             
             return linearCorrelation();
+        }
+        private double[] mutliBenford(){
+            double[] output = new double[this.multiarr.GetLength(1)];
+            double x;
+            double y;
+
+            double xsqr;
+            double ysqr;
+
+            double xy;
+
+           
+            accelerate = this.dev.CreateAccelerator(this.context);
+            var multiGetDistKern = accelerate.LoadAutoGroupedStreamKernel<Index2D,
+                ArrayView2D<double, Stride2D.DenseX>,
+                        
+                ArrayView2D<int, Stride2D.DenseX>>(multiGetDistKernal); 
+            var multiLinearCorrKern = accelerate.LoadAutoGroupedStreamKernel<Index2D,
+                ArrayView2D<int, Stride2D.DenseX>,
+                         
+                ArrayView2D<double, Stride2D.DenseX>,int>(multiLinearCorrKernal); 
+            var setBuffToValue2DKern = this.accelerate.LoadAutoGroupedStreamKernel<Index2D,
+                ArrayView2D<double, Stride2D.DenseX>,
+                double>(
+                setBuffToValue2DKernal);
+            var setIntBuffToValue2DKern = this.accelerate.LoadAutoGroupedStreamKernel<Index2D,
+                ArrayView2D<int, Stride2D.DenseX>,
+                int>(
+                setIntBuffToValue2DKernal);
+            var MultiBuffer = this.accelerate.Allocate2DDenseX<double>(new Index2D(this.multiarr.GetLength(0), this.multiarr.GetLength(1)));
+            var MultiDistBuffer = this.accelerate.Allocate2DDenseX<int>(new Index2D(this.multiarr.GetLength(1), 10));
+            var MutliValsBuffer = this.accelerate.Allocate2DDenseX<double>(new Index2D(this.multiarr.GetLength(1), 5));
+
+            MultiBuffer.CopyFromCPU(this.multiarr);
+            // this.distBuffer = accelerate.Allocate1D<int>(new Index1D(10));
+            // this.valsbuffer = accelerate.Allocate1D<double>(new Index1D(5));
+
+           
+
+
+
+            
+
+            
+            setIntBuffToValue2DKern(MultiDistBuffer.Extent.ToIntIndex(), MultiDistBuffer.View, 0);
+            setBuffToValue2DKern(MutliValsBuffer.Extent.ToIntIndex(), MutliValsBuffer.View, 0.0);
+            
+
+            multiGetDistKern(MultiBuffer.Extent.ToIntIndex(), MultiBuffer.View,MultiDistBuffer.View);
+            
+            multiLinearCorrKern(MultiDistBuffer.Extent.ToIntIndex(), MultiDistBuffer.View, MutliValsBuffer.View,this.arr.GetLength(0));
+           
+            double[,] valarr = MutliValsBuffer.GetAsArray2D();
+            for(int i = 0; i < valarr.GetLength(0); i++){
+                x= valarr[i,0];
+                y= valarr[i,1];
+
+                xsqr= valarr[i,2];
+                ysqr= valarr[i,3];
+
+                xy= valarr[i,4];
+                output[i] = ((9*xy) - (x*y))/Math.Sqrt(((9*xsqr) - (x*x))*((9*ysqr) - (y*y)));
+            }
+            
+            return output ;
+            
         }
         void print1d(int[] array)
         {
@@ -242,6 +313,29 @@ namespace Benford
 
             
         }
+        static void multiGetDistKernal(Index2D index,
+            ArrayView2D<double, Stride2D.DenseX> totalView,
+            
+
+            ArrayView2D<int, Stride2D.DenseX> distView
+            )
+        {
+            ///<summary>Fills r and rr using bView</summary>
+            ///<param name="bView">bView</param>
+            ///<param name="rView">rView</param>
+            ///<param name="rrView">rrView</param>
+            
+            int num = (int)totalView[index];
+            while (num >= 10)
+            {
+                num = num / 10;
+
+            }
+            
+            Atomic.Add(ref distView[new Index2D(index.Y, num)], 1);
+
+            
+        }
         static void linearCorrKernal(Index1D index,
             ArrayView1D<int, Stride1D.Dense> distView,
             ArrayView1D<double, Stride1D.Dense> valView,
@@ -268,8 +362,43 @@ namespace Benford
             }
             
         }
+        static void multiLinearCorrKernal(Index2D index,
+            ArrayView2D<int, Stride2D.DenseX> distView,
+            ArrayView2D<double, Stride2D.DenseX> valView,
+
+            int arrlength
+            )
+        {
+            ///<summary>Fills r and rr using bView</summary>
+            ///<param name="bView">bView</param>
+            ///<param name="rView">rView</param>
+            ///<param name="rrView">rrView</param>
+            if(index.Y > 0){
+                double arrval = (double)distView[index]/arrlength;
+                double ben = Math.Log10(1+(1/(double)index.Y));
+                Atomic.Add(ref valView[new Index2D(index.X,0)], arrval);
+                Atomic.Add(ref valView[new Index2D(index.X,1)], ben);
+
+                Atomic.Add(ref valView[new Index2D(index.X,4)], (arrval *ben));
+                Atomic.Add(ref valView[new Index2D(index.X,2)], (arrval * arrval));
+
+                Atomic.Add(ref valView[new Index2D(index.X,3)], (ben * ben));
+                
+
+            }
+            
+        }
         static void setBuffToValueKernal(Index1D index, 
             ArrayView1D<double, Stride1D.Dense> buff, 
+            double setvalue)
+        {
+            ///<summary>Sets every element in buff to setvalue</summary>
+            ///<param name="buff">buff</param>
+            ///<param name="setvalue">setvalue</param>
+            buff[index] = setvalue;
+        }
+        static void setBuffToValue2DKernal(Index2D index, 
+            ArrayView2D<double, Stride2D.DenseX> buff, 
             double setvalue)
         {
             ///<summary>Sets every element in buff to setvalue</summary>
@@ -286,36 +415,65 @@ namespace Benford
             ///<param name="setvalue">setvalue</param>
             buff[index] = setvalue;
         }
+        static void setIntBuffToValue2DKernal(Index2D index, 
+            ArrayView2D<int, Stride2D.DenseX> buff, 
+            int setvalue)
+        {
+            ///<summary>Sets every element in buff to setvalue</summary>
+            ///<param name="buff">buff</param>
+            ///<param name="setvalue">setvalue</param>
+            buff[index] = setvalue;
+        }
         static void Main(string[] args)
         {
         	Random rand = new Random();
-        	double[] test= new double[1600000];//{423.1, 2435443.3, 64.3, 773.3, 4.35};
+        	double[] test= new double[1000000];//{423.1, 2435443.3, 64.3, 773.3, 4.35};
+            double[,] test2 = new double[1000000,15];
         	for(int i = 0; i < test.GetLength(0); i++){
         		test[i] = rand.Next(1, 100000);
         	}
+            for(int i = 0; i < test2.GetLength(0); i++){
+                for(int j = 0; j < test2.GetLength(1); j++){
+                    test2[i,j] = rand.Next(1, 100000);
+                }
+            }
         	BenfordsLaw x = new BenfordsLaw(test);
+            x.setMultiArr(test2);
             //x.print1d(test);
             Console.WriteLine("BENFORD");
             Stopwatch stop = new Stopwatch();
             stop.Start();
-            x.getDist();
-        	Console.WriteLine(x.linearCorrelation());
+            
+            for(int i = 0; i < 15; i++){
+                x.getDist();
+                x.linearCorrelation();
+
+            }
+            stop.Stop();
+            Console.WriteLine(stop.ElapsedMilliseconds);
+            Console.WriteLine("TEST");
+            stop.Reset();
+            stop.Start();
+
+            //Console.WriteLine(x.linearCorrelationGPU());
             stop.Stop();
             Console.WriteLine(stop.ElapsedMilliseconds);
 
             stop.Reset();
             stop.Start();
 
-            Console.WriteLine(x.linearCorrelationGPU());
+            //Console.WriteLine(x.hybrid());
             stop.Stop();
             Console.WriteLine(stop.ElapsedMilliseconds);
 
+            Console.WriteLine("MULTI");
             stop.Reset();
             stop.Start();
-
-            Console.WriteLine(x.hybrid());
+            x.print1d(x.mutliBenford());
             stop.Stop();
             Console.WriteLine(stop.ElapsedMilliseconds);
+            Console.WriteLine();
+
 
             //x.linearCorrelationGPU();
         	//int[] output = x.getDist();
